@@ -20,7 +20,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             <button
               key={item}
               onClick={() => setActiveTab(item.toLowerCase())}
-              className={`text-sm font-medium transition-all relative px-2 py-1 ${
+              className={`text-[10px] uppercase tracking-[0.3em] font-medium font-outfit transition-all relative px-2 py-1 ${
                 activeTab === item.toLowerCase() ? "text-white" : "text-white/40 hover:text-white/70"
               }`}
             >

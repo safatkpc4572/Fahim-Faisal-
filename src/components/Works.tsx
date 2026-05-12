@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const works = [
   {
@@ -64,9 +64,20 @@ const works = [
 export default function Works() {
   const [selectedWork, setSelectedWork] = useState<typeof works[0] | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [dragged, setDragged] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleNext = () => {
+    if (!selectedWork) return;
+    setCurrentIndex((prev) => (prev + 1) % selectedWork.gallery.length);
+  };
+
+  const handlePrev = () => {
+    if (!selectedWork) return;
+    setCurrentIndex((prev) => (prev - 1 + selectedWork.gallery.length) % selectedWork.gallery.length);
+  };
 
   return (
     <section id="work" className="min-h-full w-full flex flex-col items-center justify-center relative px-4 md:px-10">
@@ -106,7 +117,12 @@ export default function Works() {
                   rotate: 0,
                   transition: { type: "spring", stiffness: 300, damping: 25 }
                 }}
-                onClick={() => !dragged && setSelectedWork(work)}
+                onClick={() => {
+                  if (!dragged) {
+                    setSelectedWork(work);
+                    setCurrentIndex(0);
+                  }
+                }}
                 viewport={{ once: true }}
                 style={{ zIndex: work.zIndex }}
                 className="absolute w-72 h-72 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border border-white/5 bg-zinc-900 shadow-[0_40px_100px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing group hover:border-orange-500/50 transition-all duration-700"
@@ -118,9 +134,11 @@ export default function Works() {
                     className="w-full h-full object-cover grayscale opacity-40 transition-all duration-1000 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 pointer-events-none"
                   />
                   <div className="absolute inset-x-0 bottom-0 p-8 bg-linear-to-t from-black/95 via-black/20 to-transparent pointer-events-none">
-                    <p className="text-[10px] text-orange-500 font-black uppercase tracking-[0.5em] mb-2 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-4 group-hover:translate-y-0">Explore Cases</p>
-                    <h3 className="text-xl md:text-2xl font-display text-white group-hover:text-orange-500 transition-colors uppercase tracking-tighter leading-none">
-                      {work.title}
+                    <p className="text-[10px] text-orange-500 font-medium font-outfit uppercase tracking-[0.5em] mb-2 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-4 group-hover:translate-y-0">Cases / 0{idx + 1}</p>
+                    <h3 className="text-2xl md:text-3xl font-display text-white group-hover:text-orange-500 transition-colors uppercase tracking-[-0.05em] leading-none">
+                      {work.title.split(' ').map((word, i) => i === work.title.split(' ').length - 1 ? (
+                        <span key={i} className="italic font-serif normal-case tracking-normal block mt-1 opacity-50 group-hover:opacity-100 transition-opacity">{word}</span>
+                      ) : <span key={i}>{word} </span>)}
                     </h3>
                   </div>
                   
@@ -139,54 +157,129 @@ export default function Works() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full h-screen md:h-[90vh] flex flex-col pt-28 md:pt-32 pb-4"
+            className="w-full h-screen md:h-[90vh] flex flex-col pt-24 md:pt-28 pb-8"
           >
             {/* Header / Sub-Nav */}
-            <div className="flex flex-col md:flex-row items-center justify-between mb-8 px-8 gap-6 md:gap-8 shrink-0">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8 px-8 md:px-16 gap-6 shrink-0">
               <div className="text-center md:text-left">
+                <p className="text-[10px] text-orange-500 uppercase tracking-[0.5em] font-medium mb-2 font-outfit">Selected Works / Archive</p>
                 <motion.h2 
                   layoutId={`title-${selectedWork.id}`}
-                  className="font-display text-5xl md:text-8xl uppercase tracking-tighter gradient-text leading-none mb-4"
+                  className="font-display text-5xl md:text-[80px] uppercase tracking-tighter leading-[0.8] mb-2"
                 >
-                  {selectedWork.title}
+                  {selectedWork.title.split(' ')[0]} <span className="gradient-text italic font-serif normal-case tracking-normal">{selectedWork.title.split(' ').slice(1).join(' ')}</span>
                 </motion.h2>
-                <p className="text-[10px] text-white/40 uppercase tracking-[0.5em] font-medium">
-                  {selectedWork.gallery.length} Curated Masterpieces
-                </p>
               </div>
 
               <button 
                 onClick={() => setSelectedWork(null)}
                 className="w-16 h-16 flex items-center justify-center bg-white/5 hover:bg-white text-white hover:text-black rounded-full transition-all border border-white/10 group backdrop-blur-3xl"
               >
-                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
+                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-700" />
               </button>
             </div>
 
-            {/* Gallery Content Area - Fixed Height for Scrolling */}
-            <div className="flex-1 w-full max-w-7xl mx-auto px-8 custom-scrollbar overflow-y-auto min-h-0">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-20">
-                {selectedWork.gallery.map((item, idx) => (
+            {/* Slider Content Area - Improved sizing and spacing */}
+            <div className="flex-1 w-full relative group/slider flex flex-col items-center justify-center min-h-0 px-4">
+              <div className="relative w-full h-full max-w-6xl mx-auto flex items-center justify-center">
+                <AnimatePresence initial={false} mode="wait">
                   <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    whileHover={{ y: -10 }}
-                    onClick={() => setSelectedImage(item.img)}
-                    className="aspect-square bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden shadow-xl group relative cursor-pointer"
+                    key={currentIndex}
+                    initial={{ opacity: 0, x: 100, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: -100, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 35 }}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x < -100) handleNext();
+                      else if (info.offset.x > 100) handlePrev();
+                    }}
+                    onClick={() => setSelectedImage(selectedWork.gallery[currentIndex].img)}
+                    className="w-full h-full max-h-[45vh] md:max-h-[55vh] aspect-video md:aspect-[16/9] bg-zinc-950 border border-white/5 rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing group/img"
                   >
                     <img 
-                      src={item.img} 
-                      className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" 
+                      src={selectedWork.gallery[currentIndex].img} 
+                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-1000" 
                       alt="" 
                     />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                      <p className="text-[8px] text-orange-500 font-black uppercase tracking-widest mb-1">Project {idx + 1}</p>
-                      <h4 className="text-[10px] text-white font-bold uppercase tracking-tight">{item.title}</h4>
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute bottom-10 left-10 text-left pointer-events-none">
+                        <motion.p 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[10px] text-orange-500 font-medium font-outfit uppercase tracking-[0.5em] mb-2"
+                      >
+                        Frame {currentIndex + 1} / {selectedWork.gallery.length}
+                      </motion.p>
+                      <motion.h4 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-3xl md:text-5xl font-display text-white uppercase tracking-tighter leading-none"
+                      >
+                        {selectedWork.gallery[currentIndex].title.split(' ').length > 1 ? (
+                          <>
+                            {selectedWork.gallery[currentIndex].title.split(' ')[0]} <span className="italic font-serif normal-case tracking-normal opacity-40">{selectedWork.gallery[currentIndex].title.split(' ').slice(1).join(' ')}</span>
+                          </>
+                        ) : selectedWork.gallery[currentIndex].title}
+                      </motion.h4>
                     </div>
                   </motion.div>
-                ))}
+                </AnimatePresence>
+
+                {/* Desktop Buttons - More intentional design */}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                  className="absolute -left-6 md:-left-4 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-white/5 hover:bg-orange-500 text-white rounded-full border border-white/10 transition-all opacity-0 group-hover/slider:opacity-100 z-10 hidden xl:flex hover:scale-110 active:scale-95"
+                >
+                  <ChevronLeft className="w-6 h-6 stroke-[1.5]" />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                  className="absolute -right-6 md:-right-4 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center bg-white/5 hover:bg-orange-500 text-white rounded-full border border-white/10 transition-all opacity-0 group-hover/slider:opacity-100 z-10 hidden xl:flex hover:scale-110 active:scale-95"
+                >
+                  <ChevronRight className="w-6 h-6 stroke-[1.5]" />
+                </button>
+              </div>
+
+              {/* Navigation Indicators - Improved rhythm */}
+              <div className="shrink-0 flex flex-col items-center gap-6 mt-8 mb-12">
+                <div className="flex gap-2.5">
+                  {selectedWork.gallery.map((_, idx) => {
+                    // Only show dots around current index for long galleries
+                    const isNear = Math.abs(idx - currentIndex) < 3 || idx === 0 || idx === selectedWork.gallery.length - 1;
+                    if (!isNear) return null;
+                    
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentIndex(idx)}
+                        className={`h-1 transition-all duration-700 rounded-full ${
+                          idx === currentIndex ? "w-12 bg-orange-500" : "w-3 bg-white/10 hover:bg-white/30"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-12">
+                   <button 
+                    onClick={handlePrev}
+                    className="text-[10px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-colors flex items-center gap-2 group/btn font-medium font-outfit"
+                   >
+                     <ChevronLeft className="w-3 h-3 group-hover/btn:-translate-x-1 transition-transform" /> PREV
+                   </button>
+                   <div className="text-[10px] uppercase tracking-[0.5em] font-medium font-outfit text-white/30">
+                     Swipe to Explore
+                   </div>
+                   <button 
+                    onClick={handleNext}
+                    className="text-[10px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-colors flex items-center gap-2 group/btn font-medium font-outfit"
+                   >
+                     NEXT <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                   </button>
+                </div>
               </div>
             </div>
           </motion.div>
